@@ -9,6 +9,9 @@ using Mono.Cecil.Cil;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.IO;
+#if NET5_0_OR_GREATER
+using System.Runtime.Loader;
+#endif
 using System.Text;
 using AssemblyHashAlgorithm = Mono.Cecil.AssemblyHashAlgorithm;
 
@@ -62,7 +65,12 @@ namespace MonoMod.Utils {
             Assembly asm;
 
             if (stream is MemoryStream ms) {
-                asm = Assembly.Load(ms.GetBuffer());
+#if NET5_0_OR_GREATER
+                using (var ms2 = new MemoryStream(ms.GetBuffer()))
+                    asm = AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly())?.LoadFromStream(ms2);
+#else
+                    asm = Assembly.Load(ms.GetBuffer());
+#endif
             } else {
                 using (MemoryStream copy = new MemoryStream()) {
 
@@ -77,7 +85,12 @@ namespace MonoMod.Utils {
 #endif
 
                     copy.Seek(0, SeekOrigin.Begin);
+#if NET5_0_OR_GREATER
+                    using (var ms2 = new MemoryStream(copy.GetBuffer()))
+asm = AssemblyLoadContext.GetLoadContext(Assembly.GetExecutingAssembly())?.LoadFromStream(ms2);
+#else
                     asm = Assembly.Load(copy.GetBuffer());
+#endif
                 }
             }
 
